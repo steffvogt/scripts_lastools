@@ -1,0 +1,14 @@
+
+C:\>cd temp\ehingen_lwe_test
+
+C:\temp\ehingen_lwe_test>cd gis_data
+
+C:\temp\ehingen_lwe_test\gis_data>classify_las.bat pointclouds\ehingen_lwe_test_20200630_alle_missions_dhdngk3_group1_densified_point_cloud.las classified_01.las
+
+C:\temp\ehingen_lwe_test\gis_data>echo off
+Please note that LAStools is not "free" (see http://lastools.org/LICENSE.txt)
+contact 'martin.isenburg@rapidlasso.com' to clarify licensing terms if needed.
+ERROR processing file 'pointclouds\ehingen_lwe_test_20200630_alle_missions_dhdngk3_group1_densified_point_cloud.las'. maybe out of memory?
+Der Befehl "ns" ist entweder falsch geschrieben oder
+konnte nicht gefunden werden.
+ERROR: no input specified
