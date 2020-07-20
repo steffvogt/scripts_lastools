@@ -5,26 +5,34 @@
 
 :: add LAStools\bin directory to PATH to run script from anywhere
 
-set PATH=%PATH%;C:\software\LAStools\bin
+set PATH=%PATH%;C:\LAStools\bin
 
 :: specify the number of cores to use
 
 set NUM_CORES=4
+
+set INFILE=%1
+set OUTFILE=%INFILE:~0,-4%_classified.las
+set INFILE_PREFIX=%INFILE:~0,-4%
+
+
+
+
 
 :: create a lasinfo report and a 0.5 m RGB raster forinput LAZ file
 
 rmdir .\1_quality /s /q
 mkdir .\1_quality
 
-lasinfo -i 0_photogrammetry\points.laz ^
+lasinfo -i %INFILE% ^
         -cd ^
-        -o 1_quality\fillongley.txt
+        -o 1_quality\%INFILE_PREFIX%.txt
 
-lasgrid -i 0_photogrammetry\points.laz ^
+lasgrid -i %INFILE% ^
         -step 0.5 ^
         -rgb ^
         -fill 1 ^
-        -o 1_quality\fillongley.png
+        -o 1_quality\%INFILE_PREFIX%.png
 
 :: use lastile to create a buffered tiling from the original
 :: photogrammetry points of Fillongley. we use '-tile_size 200'
@@ -37,9 +45,9 @@ lasgrid -i 0_photogrammetry\points.laz ^
 rmdir .\2_tiles_raw /s /q
 mkdir .\2_tiles_raw
 
-lastile -i 0_photogrammetry\points.laz ^
+lastile -i %INFILE% ^
         -tile_size 200 -buffer 25 -flag_as_withheld ^
-        -o 2_tiles_raw\fillongley.laz -olaz
+        -o 2_tiles_raw\%INFILE_PREFIX%.laz -olaz
 
 rmdir .\3_tiles_temp1 /s /q
 mkdir .\3_tiles_temp1
@@ -48,7 +56,7 @@ mkdir .\3_tiles_temp1
 :: 90 cm by 90 cm cell the classification code 8 (but only do
 :: this for cells containing 20 or more points) using lasthin
 
-lasthin -i 2_tiles_raw\fillongley_*.laz ^
+lasthin -i 2_tiles_raw\%INFILE_PREFIX%*.laz ^
         -step 0.9 ^
         -percentile 20 20 ^
         -classify_as 8 ^
@@ -65,7 +73,7 @@ lasthin -i 2_tiles_raw\fillongley_*.laz ^
 rmdir .\3_tiles_temp2 /s /q
 mkdir .\3_tiles_temp2
 
-lasnoise -i 3_tiles_temp1\fillongley_*.laz ^
+lasnoise -i 3_tiles_temp1\%INFILE_PREFIX%*.laz ^
          -ignore_class 0 ^
          -step_xy 2 -step_z 0.5 -isolated 3 ^
          -classify_as 12 ^
@@ -82,7 +90,7 @@ lasnoise -i 3_tiles_temp1\fillongley_*.laz ^
 rmdir .\3_tiles_temp3 /s /q
 mkdir .\3_tiles_temp3
 
-lasground -i 3_tiles_temp2\fillongley_*.laz ^
+lasground -i 3_tiles_temp2\%INFILE_PREFIX%*.laz ^
           -ignore_class 0 12 ^
           -town -ultra_fine ^
           -odir 3_tiles_temp3 -olaz ^
@@ -95,7 +103,7 @@ lasground -i 3_tiles_temp2\fillongley_*.laz ^
 rmdir .\4_tiles_denoised /s /q
 mkdir .\4_tiles_denoised
 
-lasheight -i 3_tiles_temp3\fillongley_*.laz ^
+lasheight -i 3_tiles_temp3\%INFILE_PREFIX%*.laz ^
           -classify_below -0.2 7 ^
           -classify_above -0.2 1 ^
           -odir 4_tiles_denoised -olaz ^
@@ -107,7 +115,7 @@ lasheight -i 3_tiles_temp3\fillongley_*.laz ^
 rmdir .\5_tiles_thinned_lowest /s /q
 mkdir .\5_tiles_thinned_lowest
 
-lasthin -i 4_tiles_denoised\fillongley_*.laz ^
+lasthin -i 4_tiles_denoised\%INFILE_PREFIX%*.laz ^
         -ignore_class 7 ^
         -step 0.25 ^
         -lowest ^
@@ -122,7 +130,7 @@ lasthin -i 4_tiles_denoised\fillongley_*.laz ^
 rmdir .\6_tiles_ground /s /q
 mkdir .\6_tiles_ground
 
-lasground -i 5_tiles_thinned_lowest\fillongley_*.laz ^
+lasground -i 5_tiles_thinned_lowest\%INFILE_PREFIX%*.laz ^
           -ignore_class 1 7 ^
           -town -extra_fine -bulge 0.1 ^
           -odir 6_tiles_ground -olaz ^
@@ -136,7 +144,7 @@ lasground -i 5_tiles_thinned_lowest\fillongley_*.laz ^
 rmdir .\7_tiles_dtm /s /q
 mkdir .\7_tiles_dtm
 
-las2dem -i 6_tiles_ground\fillongley_*.laz ^
+las2dem -i 6_tiles_ground\%INFILE_PREFIX%*.laz ^
         -keep_class 2 ^
         -step 0.25 ^
         -use_tile_bb ^
@@ -146,7 +154,7 @@ las2dem -i 6_tiles_ground\fillongley_*.laz ^
 :: we merge the gridded LAZ files for the DTM into one input and create
 :: a 25cm hillshaded DTM raster in PNG format
 
-blast2dem -i 7_tiles_dtm\fillongley_*.laz -merged ^
+blast2dem -i 7_tiles_dtm\%INFILE_PREFIX%*.laz -merged ^
           -hillshade ^
           -step 0.25 ^
           -o dtm_hillshaded.png
@@ -157,7 +165,7 @@ blast2dem -i 7_tiles_dtm\fillongley_*.laz -merged ^
 rmdir .\8_tiles_thinned_highest /s /q
 mkdir .\8_tiles_thinned_highest
 
-lasthin -i 4_tiles_denoised\fillongley_*.laz ^
+lasthin -i 4_tiles_denoised\%INFILE_PREFIX%*.laz ^
         -ignore_class 7 ^
         -step 0.25 ^
         -highest ^
@@ -173,7 +181,7 @@ lasthin -i 4_tiles_denoised\fillongley_*.laz ^
 rmdir .\9_tiles_dsm /s /q
 mkdir .\9_tiles_dsm
 
-las2dem -i 8_tiles_thinned_highest\fillongley_*.laz ^
+las2dem -i 8_tiles_thinned_highest\%INFILE_PREFIX%*.laz ^
         -keep_class 8 ^
         -step 0.25 ^
         -use_tile_bb ^
@@ -183,7 +191,7 @@ las2dem -i 8_tiles_thinned_highest\fillongley_*.laz ^
 :: we merge the gridded LAZ files for the DSM into one input and create
 :: a 25cm hillshaded DSM raster in PNG format
 
-blast2dem -i 9_tiles_dsm\fillongley_*.laz -merged ^
+blast2dem -i 9_tiles_dsm\%INFILE_PREFIX%*.laz -merged ^
           -hillshade ^
           -step 0.25 ^
           -o dsm_hillshaded.png
