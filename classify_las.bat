@@ -22,6 +22,9 @@ echo off
 :: specify parameters
 ::
 
+:: Number of cores for parallel processing
+set NUM_CORES=4
+
 :: name of shapefile with areas to be smoothed
 :: set SHAPEFILE=strohmaier_auggen_clip_grube_2D.shp
 
@@ -33,9 +36,15 @@ set PATH=%PATH%;C:\LASTools\bin;
 set INFILE=%1
 
 
-set OUTFILE=%INFILE:~0,-4%_classified.las
+set OUTFILE=%INFILE:~0,-4%_classified_coarse_step_250.las
 
-lasground_new -i %INFILE% -o %OUTFILE% -all_returns
+lasground_new -i %INFILE% ^
+              -o %OUTFILE% ^
+              -all_returns ^
+              -step 2.5 ^
+              -coarse ^
+              -cpu64 ^
+              -cores %NUM_CORES%
 
 
 
