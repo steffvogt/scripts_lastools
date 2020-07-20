@@ -1,7 +1,7 @@
 ::
 :: a batch script for converting a photogrammetry points into a
 :: number of products with a tile-based multi-core batch pipeline
-::
+:: heavily based on example script from LAStools 
 
 :: add LAStools\bin directory to PATH to run script from anywhere
 
