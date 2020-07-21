@@ -1,18 +1,20 @@
 ::
-:: Batch script for clipping an area defined by a shapefile
+:: Batch script for deleting points outside of polygon(s) defined by a shapefile and output the clipped las file
 ::
-:: Input is LAS file from e.g. pix4D and a shapefile with polygon of the clipping area
-:: Output is one single LAS file where the polygon area has been clipped
+:: Input is LAS file from e.g. pix4D and a shapefile with polygon(s) of the clipping area
+:: Output is one single LAS file where the points outside the polygon(s) have been deleted
 ::
 :: Parameters:
 ::
-:: 
-:: SHAPEFILE: shapefile with polygons of areas to be clipped
+:: none
+::
+:: USAGE: clip_las_with_shapefile.bat mypointcloud.las mypolygonshapefile.shp
+::
 ::
 :: Processing steps:
-:: lasclip creates point cloud only for the clipped area
+:: lasclip creates point cloud with points only inside the clipping polygon(s)
 ::
-:: Steffen Vogt, 2020-07-03
+:: Steffen Vogt, 2020-07-21
 
 echo off
 
@@ -20,13 +22,10 @@ echo off
 :: specify parameters
 ::
 
-:: name of shapefile with areas to be clipped
-:: set SHAPEFILE=strohmaier_auggen_clip_grube_2D.shp
-
-:: get the input file name for ouptut file name generation
+:: get the input las file name for ouptut file name generation
 set INFILE=%1
 
-:: get the input file name for ouptut file name generation
+:: get the input shape file name
 set SHAPEFILE=%2
 
 set OUTFILE=%INFILE:~0,-4%_clipped.las
@@ -40,14 +39,13 @@ set PATH=%PATH%;C:\LASTools\bin;
 :: do the actual processing
 ::
 
-:: clip and keep inside for thinning
+:: clip and keep points inside of polygon(s)
 lasclip -i %1 ^
         -poly %SHAPEFILE% ^
-        -o %OUTFILE%
+        -o %OUTFILE% ^
+        -cpu64
 
-
-:: replace System / Software tags in output file
-
+:: replace System / Software tags in output las file
 lasinfo -i %OUTFILE% ^
         -set_system_identifier "svGeo photogrammetry" ^
         -set_generating_software "svGeo las_pipe"
