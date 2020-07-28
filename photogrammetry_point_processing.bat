@@ -35,7 +35,7 @@ set PATH=%PATH%;C:\LAStools\bin
 set NUM_CORES=4
 
 :: specifiy grid cell size
-set CELL_SIZE=1.00
+set CELL_SIZE=0.50
 
 
 
@@ -112,20 +112,20 @@ set TIME_START=%time%
 
 :: create a lasinfo report and a 0.25 m RGB raster from input LAZ file
 
-if exist .\01_quality rmdir .\01_quality /s /q
-mkdir .\01_quality
+::if exist .\01_quality rmdir .\01_quality /s /q
+::mkdir .\01_quality
 
 lasinfo -i %INFILE% ^
         -cd ^
         -cpu64 ^
-        -o 01_quality\%INFILE_PREFIX%.txt
+        -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_infile_quality.txt
 
 lasgrid -i %INFILE% ^
         -step %CELL_SIZE% ^
         -rgb ^
         -scale_RGB_down ^
         -fill 1 ^
-        -o 01_quality\%INFILE_PREFIX%.png
+        -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_infile_quickview.png
 
 :: use lastile to create a buffered tiling from the original
 :: photogrammetry points. We use '-tile_size 200'
@@ -262,7 +262,7 @@ las2dem -i 06_tiles_ground\%INFILE_PREFIX%*.laz ^
 blast2dem -i 07_tiles_dtm\%INFILE_PREFIX%*.laz -merged ^
           -hillshade ^
           -step %CELL_SIZE% ^
-          -o dtm_hillshaded.png
+          -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm_hillshaded.png
 
 :: the highest points per 25 cm by 25 cm cell that is *not* a noise point
 :: (i.e. classification other than 7) is classified as 8 with lasthin 
@@ -301,7 +301,7 @@ las2dem -i 08_tiles_thinned_highest\%INFILE_PREFIX%*.laz ^
 blast2dem -i 09_tiles_dsm\%INFILE_PREFIX%*.laz -merged ^
           -hillshade ^
           -step %CELL_SIZE% ^
-          -o dsm_hillshaded_%CELL_SIZE%.png
+          -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dsm_hillshaded.png
 
 
 
@@ -313,8 +313,6 @@ blast2dem -i 09_tiles_dsm\%INFILE_PREFIX%*.laz -merged ^
 :: merge laz output tiles into single las file for convenient use in other software
 :: and subsequently remove intermediate directories and files
 
-if exist .\10_las_output rmdir .\10_las_output /s /q
-mkdir .\10_las_output
 
 :: delete raw tiles
 if exist .\02_tiles_raw rmdir .\02_tiles_raw /s /q
@@ -328,7 +326,7 @@ lastile -i .\03_tiles_temp1\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\03_tiles_temp1_no_buffer\*.laz ^
-       -o .\10_las_output\03_temp1_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_03_temp1.las ^
        -cpu64
 rmdir .\03_tiles_temp1_no_buffer /s /q
 rmdir .\03_tiles_temp1 /s /q
@@ -341,7 +339,7 @@ lastile -i .\03_tiles_temp2\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\03_tiles_temp2_no_buffer\*.laz ^
-       -o .\10_las_output\03_temp2_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_03_temp2.las ^
        -cpu64
 rmdir .\03_tiles_temp2_no_buffer /s /q
 rmdir .\03_tiles_temp2 /s /q
@@ -354,7 +352,7 @@ lastile -i .\03_tiles_temp3\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\03_tiles_temp3_no_buffer\*.laz ^
-       -o .\10_las_output\03_temp3_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_03_temp3.las ^
        -cpu64
 rmdir .\03_tiles_temp3_no_buffer /s /q
 rmdir .\03_tiles_temp3 /s /q
@@ -367,7 +365,7 @@ lastile -i .\04_tiles_denoised\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\04_tiles_denoised_no_buffer\*.laz ^
-       -o .\10_las_output\04_denoised_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_04_denoised.las ^
        -cpu64
 rmdir .\04_tiles_denoised_no_buffer /s /q
 rmdir .\04_tiles_denoised /s /q
@@ -380,7 +378,7 @@ lastile -i .\05_tiles_thinned_lowest\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\05_tiles_thinned_lowest_no_buffer\*.laz ^
-       -o .\10_las_output\05_thinned_lowest_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_05_thinned_lowest_.las ^
        -cpu64
 rmdir .\05_tiles_thinned_lowest_no_buffer /s /q
 rmdir .\05_tiles_thinned_lowest /s /q
@@ -393,14 +391,14 @@ lastile -i .\06_tiles_ground\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\06_tiles_ground_no_buffer\*.laz ^
-       -o .\10_las_output\06_ground_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_06_ground.las ^
        -cpu64
 rmdir .\06_tiles_ground_no_buffer /s /q
 rmdir .\06_tiles_ground /s /q
 
 
 lasmerge .\07_tiles_dtm\*.laz ^
-       -o .\10_las_output\07_dtm_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_07_dtm.las ^
        -cpu64
 rmdir .\07_tiles_dtm /s /q
 
@@ -412,30 +410,30 @@ lastile -i .\08_tiles_thinned_highest\*.laz ^
         -olaz ^
         -cpu64
 lasmerge .\08_tiles_thinned_highest_no_buffer\*.laz ^
-       -o .\10_las_output\08_thinned_highest_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_08_thinned_highest.las ^
        -cpu64
 rmdir .\08_tiles_thinned_highest_no_buffer /s /q
 rmdir .\08_tiles_thinned_highest /s /q
 
 lasmerge .\09_tiles_dsm\*.laz ^
-       -o .\10_las_output\09_dsm_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_09_dsm.las ^
        -cpu64
 rmdir .\09_tiles_dsm /s /q
 
 
->processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo Processing started at: %DATE_START% %TIME_START%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo Processing ended at:   %date% %time%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo input LAS file: %INFILE%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo output LAS classified ground file: 06_ground_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo. 
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo cell size: %CELL_SIZE%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo lasground step size: %LASGROUND_STEP%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo lasground initial ground point search strategy: %LASGROUND_INITIAL_GROUNDPOINT_STRATEGY%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo lasground bulge: %LASGROUND_BULGE%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo. 
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo Below ground noise filter cell size: %FILTER_BELOW_GROUND_CELL_SIZE%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo Below ground noise filter lasground step size: %FILTER_BELOW_GROUND_LASGROUND_STEP%
->>processing_parameters_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.txt echo Below ground noise filter lasground initial ground point strategy: %FILTER_BELOW_GROUND_LASGROUND_INITIAL_GROUNDPOINT_STRATEGY%
+>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Processing started at: %DATE_START% %TIME_START%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Processing ended at:   %date% %time%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo input LAS file: %INFILE%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo output LAS classified ground file: 06_ground_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo. 
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo cell size: %CELL_SIZE%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo lasground step size: %LASGROUND_STEP%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo lasground initial ground point search strategy: %LASGROUND_INITIAL_GROUNDPOINT_STRATEGY%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo lasground bulge: %LASGROUND_BULGE%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo. 
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Below ground noise filter cell size: %FILTER_BELOW_GROUND_CELL_SIZE%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Below ground noise filter lasground step size: %FILTER_BELOW_GROUND_LASGROUND_STEP%
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Below ground noise filter lasground initial ground point strategy: %FILTER_BELOW_GROUND_LASGROUND_INITIAL_GROUNDPOINT_STRATEGY%
 
 
 
