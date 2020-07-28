@@ -3,8 +3,8 @@
 :: number of products with a tile-based multi-core batch pipeline
 :: heavily based on example script photogrammtry_point_processing_example01.bat from LAStools
 ::
-:: DEVELOPMENT VERSION, keeps all intermediate products, useful when testing different parameter values
-::
+:: PRODUCTION VERSION, write out only DTM *.las file and DTM *.xyz ASCII file
+:: When testing different paramter values use the other version of the script, that writes out all intermediate products
 ::
 :: Input is LAS file from e.g. pix4D 
 :: Output is ... (tbd)
@@ -267,168 +267,48 @@ blast2dem -i 07_tiles_dtm\%INFILE_PREFIX%*.laz -merged ^
           -step %CELL_SIZE% ^
           -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm_hillshaded.png
 
-:: the highest points per 25 cm by 25 cm cell that is *not* a noise point
-:: (i.e. classification other than 7) is classified as 8 with lasthin 
-
-if exist .\08_tiles_thinned_highest rmdir .\08_tiles_thinned_highest /s /q
-mkdir .\08_tiles_thinned_highest
-
-lasthin -i 04_tiles_denoised\%INFILE_PREFIX%*.laz ^
-        -ignore_class 7 ^
-        -step %CELL_SIZE% ^
-        -highest ^
-        -classify_as 8 ^
-        -odir 08_tiles_thinned_highest -olaz ^
-        -cpu64 ^
-        -cores %NUM_CORES%
-
-:: interpolate points classified as 8 into a TIN and raster a 25 cm DSM
-:: but cutting out only the center 200 meter by 200 meter tile but not
-:: rasterizing the buffers. the DSM raster is stored as gridded LAZ for
-:: maximal compression
-
-if exist .\09_tiles_dsm rmdir .\09_tiles_dsm /s /q
-mkdir .\09_tiles_dsm
-
-las2dem -i 08_tiles_thinned_highest\%INFILE_PREFIX%*.laz ^
-        -keep_class 8 ^
-        -step %CELL_SIZE% ^
-        -use_tile_bb ^
-        -odir 09_tiles_dsm -olaz ^
-        -cpu64 ^
-        -cores %NUM_CORES%
-
-:: we merge the gridded LAZ files for the DSM into one input and create
-:: a 25cm hillshaded DSM raster in PNG format
-
-blast2dem -i 09_tiles_dsm\%INFILE_PREFIX%*.laz -merged ^
-          -hillshade ^
-          -step %CELL_SIZE% ^
-          -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dsm_hillshaded.png
 
 
-
-
-
-
-
-
-:: merge laz output tiles into single las file for convenient use in other software
-:: and subsequently remove intermediate directories and files
-
-
-:: delete raw tiles
-if exist .\02_tiles_raw rmdir .\02_tiles_raw /s /q
-
-:: for each processing step merge processed tiles into one las file and delete tiles
-if exist .\03_tiles_temp1_no_buffer rmdir .\03_tiles_temp1_no_buffer /s /q
-mkdir .\03_tiles_temp1_no_buffer
-lastile -i .\03_tiles_temp1\*.laz ^
-        -odir .\03_tiles_temp1_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
-        -cpu64
-lasmerge .\03_tiles_temp1_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_03_temp1.las ^
-       -cpu64
-rmdir .\03_tiles_temp1_no_buffer /s /q
-rmdir .\03_tiles_temp1 /s /q
-
-if exist .\03_tiles_temp2_no_buffer rmdir .\03_tiles_temp2_no_buffer /s /q
-mkdir .\03_tiles_temp2_no_buffer
-lastile -i .\03_tiles_temp2\*.laz ^
-        -odir .\03_tiles_temp2_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
-        -cpu64
-lasmerge .\03_tiles_temp2_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_03_temp2.las ^
-       -cpu64
-rmdir .\03_tiles_temp2_no_buffer /s /q
-rmdir .\03_tiles_temp2 /s /q
-
-if exist .\03_tiles_temp3_no_buffer rmdir .\03_tiles_temp3_no_buffer /s /q
-mkdir .\03_tiles_temp3_no_buffer
-lastile -i .\03_tiles_temp3\*.laz ^
-        -odir .\03_tiles_temp3_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
-        -cpu64
-lasmerge .\03_tiles_temp3_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_03_temp3.las ^
-       -cpu64
-rmdir .\03_tiles_temp3_no_buffer /s /q
-rmdir .\03_tiles_temp3 /s /q
-
-if exist .\04_tiles_denoised_no_buffer rmdir .\04_tiles_denoised_no_buffer /s /q
-mkdir .\04_tiles_denoised_no_buffer
-lastile -i .\04_tiles_denoised\*.laz ^
-        -odir .\04_tiles_denoised_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
-        -cpu64
-lasmerge .\04_tiles_denoised_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_04_denoised.las ^
-       -cpu64
-rmdir .\04_tiles_denoised_no_buffer /s /q
-rmdir .\04_tiles_denoised /s /q
-
-if exist .\05_tiles_thinned_lowest_no_buffer rmdir .\05_tiles_thinned_lowest_no_buffer /s /q
-mkdir .\05_tiles_thinned_lowest_no_buffer
-lastile -i .\05_tiles_thinned_lowest\*.laz ^
-        -odir .\05_tiles_thinned_lowest_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
-        -cpu64
-lasmerge .\05_tiles_thinned_lowest_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_05_thinned_lowest_.las ^
-       -cpu64
-rmdir .\05_tiles_thinned_lowest_no_buffer /s /q
-rmdir .\05_tiles_thinned_lowest /s /q
-
-if exist .\06_tiles_ground_no_buffer rmdir .\06_tiles_ground_no_buffer /s /q
-mkdir .\06_tiles_ground_no_buffer
-lastile -i .\06_tiles_ground\*.laz ^
-        -odir .\06_tiles_ground_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
-        -cpu64
-lasmerge .\06_tiles_ground_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_06_ground.las ^
-       -cpu64
-rmdir .\06_tiles_ground_no_buffer /s /q
-rmdir .\06_tiles_ground /s /q
-
+:: merge DTM tiles into one las file and delete intermediate DTM tiles
 
 lasmerge .\07_tiles_dtm\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_07_dtm.las ^
+       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm.las ^
        -cpu64
-rmdir .\07_tiles_dtm /s /q
 
-if exist .\08_tiles_thinned_highest_no_buffer rmdir .\08_tiles_thinned_highest_no_buffer /s /q
-mkdir .\08_tiles_thinned_highest_no_buffer
-lastile -i .\08_tiles_thinned_highest\*.laz ^
-        -odir .\08_tiles_thinned_highest_no_buffer ^
-        -remove_buffer ^
-        -olaz ^
+:: remove intermediate directories and files
+
+if exist .\02_tiles_raw rmdir .\02_tiles_raw /s /q
+if exist .\03_tiles_temp1 rmdir .\03_tiles_temp1 /s /q
+if exist .\03_tiles_temp2 rmdir .\03_tiles_temp2 /s /q
+if exist .\03_tiles_temp3 rmdir .\03_tiles_temp3 /s /q
+if exist .\04_tiles_denoised rmdir .\04_tiles_denoised /s /q
+if exist .\05_tiles_thinned_lowest rmdir .\05_tiles_thinned_lowest /s /q
+if exist .\06_tiles_ground rmdir .\06_tiles_ground /s /q
+if exist .\07_tiles_dtm rmdir .\07_tiles_dtm /s /q
+
+:: replace System / Software tags in output las file
+
+lasinfo -i %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm.las ^
+        -set_system_identifier "svGeo photogrammetry" ^
+        -set_generating_software "svGeo las_pipe"
+
+:: Write commma separated ASCII xyz file
+
+las2txt -i %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm.las ^
+        -o %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm.txt ^
+        -parse xyz ^
+        -sep comma ^
         -cpu64
-lasmerge .\08_tiles_thinned_highest_no_buffer\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_08_thinned_highest.las ^
-       -cpu64
-rmdir .\08_tiles_thinned_highest_no_buffer /s /q
-rmdir .\08_tiles_thinned_highest /s /q
 
-lasmerge .\09_tiles_dsm\*.laz ^
-       -o .\%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_09_dsm.las ^
-       -cpu64
-rmdir .\09_tiles_dsm /s /q
+
 
 :: Write text file with processing parameters
 
 >%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Processing started at: %DATE_START% %TIME_START%
 >>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo Processing ended at:   %date% %time%
 >>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo input LAS file: %INFILE%
->>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo output LAS classified ground file: 06_ground_%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%.las
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo output LAS DTM file: %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm.las
+>>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo output XYZ DTM file: %INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_dtm.xyz
 >>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo. 
 >>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo cell size: %CELL_SIZE%
 >>%INFILE_PREFIX%_cell%CELL_SIZE%_lgstep%LASGROUND_STEP%_lgbulge%LASGROUND_BULGE%_processing_parameters.txt echo lasground step size: %LASGROUND_STEP%
